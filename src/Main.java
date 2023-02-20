@@ -1,53 +1,68 @@
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
-    public static void main(String[] args) {
-    // Create participants and resources
-            Fox robin = new Fox();
-            Fox miki = new Fox();
-            Elephant dumbo = new Elephant();
-            Food food = new Food();
-    // Process data
-            ExecutorService service = null;
-            try {
-                service = Executors.newScheduledThreadPool(10);
-                service.submit(() -> dumbo.eat(food));
-                service.submit(() -> robin.eat(food));
-                service.submit(() -> miki.eat(food));
-            } finally {
-                if(service != null) service.shutdown();
-            }
-        }
+
+    private static Map<String, Double> pricesByAirline;
+    public static void main(String[] args) throws InterruptedException {
+        init();
+
+        String from = "BCN";
+        String to = "JFK";
+
+        Double lowestPrice = getLowestPrice(from, to);
+        Double avgPrice = getAvgPrice(from, to);
+
+        System.out.println("Lowest Price: " + lowestPrice);
+        System.out.println("Avg Price: " + avgPrice);
     }
 
-    class Food {}
+    private static Double getLowestPrice(String from, String to) {
+        AtomicReference<Double> lowestPrice = new AtomicReference<>(null);
 
-    class Elephant {
-        public void eat(Food food) {
-            synchronized(food) {
-                System.out.println("Elephant got Food!");
-                try {
-                    Thread.sleep(60 * 1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        pricesByAirline.keySet().stream().parallel().forEach(airline -> {
+            Double price = getPriceTrip(airline, from, to);
+            if (lowestPrice.get() == null || price < lowestPrice.get()) {
+                lowestPrice.set(price);
             }
-        }
+        });
+        return lowestPrice.get();
     }
 
-    class Fox {
-        public void eat(Food food) {
-            move();
-            synchronized(food) {
-                System.out.println("Got Food!");
-            }
-        }
-        public void move() {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                // Handle exception
-            }
+    private static Double getAvgPrice(String from, String to) {
+        AtomicReference<Double> sumPrice = new AtomicReference<>(0.0);
+        pricesByAirline.keySet().stream().parallel().forEach(airline -> {
+            Double price = getPriceTrip(airline, from, to);
+            Double result = sumPrice.get() + price;
+            sumPrice.set(result);
+        });
+
+        int countAirlines = pricesByAirline.keySet().size();
+        return sumPrice.get() / countAirlines;
     }
+
+    private static void init() {
+        pricesByAirline = new HashMap<>();
+        pricesByAirline.put("American Airlines", 550.0);
+        pricesByAirline.put("US Airways", 610.0);
+        pricesByAirline.put("Delta Airlines", 540.0);
+        pricesByAirline.put("Singapore Airlines", 612.0);
+        pricesByAirline.put("Qatar Airways", 590.0);
+        pricesByAirline.put("Cathay Pacific Airways", 585.0);
+        pricesByAirline.put("Sky Airline", 540.0);
+        pricesByAirline.put("Copa Airlines Colombia", 610.0);
+        pricesByAirline.put("Avianca", 580.0);
+        pricesByAirline.put("LATAM Airlines Group", 600.0);
+        pricesByAirline.put("Aeroméxico", 740.0);
+        pricesByAirline.put("Aerolíneas Argentinas", 940.0);
+    }
+
+    private static Double getPriceTrip(String airline, String from, String to) {
+
+
+        return pricesByAirline.get(airline);
+    }
+
 }
