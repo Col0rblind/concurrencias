@@ -6,14 +6,15 @@ public class Main {
     // Create participants and resources
             Fox robin = new Fox();
             Fox miki = new Fox();
+            Elephant dumbo = new Elephant();
             Food food = new Food();
-            Water water = new Water();
     // Process data
             ExecutorService service = null;
             try {
                 service = Executors.newScheduledThreadPool(10);
-                service.submit(() -> robin.eatAndDrink(food,water));
-                service.submit(() -> miki.drinkAndEat(food,water));
+                service.submit(() -> dumbo.eat(food));
+                service.submit(() -> robin.eat(food));
+                service.submit(() -> miki.eat(food));
             } finally {
                 if(service != null) service.shutdown();
             }
@@ -22,28 +23,31 @@ public class Main {
 
     class Food {}
 
-    class Water {}
+    class Elephant {
+        public void eat(Food food) {
+            synchronized(food) {
+                System.out.println("Elephant got Food!");
+                try {
+                    Thread.sleep(60 * 1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     class Fox {
-        public void eatAndDrink(Food food, Water water) {
+        public void eat(Food food) {
+            move();
             synchronized(food) {
                 System.out.println("Got Food!");
-                move();
             }
-            drinkAndEat(food, water);
-        }
-        public void drinkAndEat(Food food, Water water) {
-            synchronized(water) {
-                System.out.println("Got Water!");
-                move();
-            }
-            eatAndDrink(food, water);
         }
         public void move() {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-    // Handle exception
+                // Handle exception
             }
     }
 }
